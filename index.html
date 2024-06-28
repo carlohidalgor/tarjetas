@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <script src="assets/plugins/qrCode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</head>
+
+<body>
+  <div class="row justify-content-center m-3">
+    <div class="col-sm-4 shadow p-1">
+      <h5 class="text-center">Escanear codigo QR</h5>
+      <div class="row text-center p-3 m-3">
+        <a id="btn-scan-qr" href="#">
+          <img src="assets/qr.svg" class="img-fluid text-center" width="150">
+          <a />
+          <canvas hidden="" id="qr-canvas" class="img-fluid"></canvas>
+      </div>
+
+      <div class="row m-2">
+        <span>Entrada:
+          <span id="he"> </span>
+        </span>
+        <button class="btn btn-success btn-sm rounded-3 mb-2" onclick="encenderCamara()">Encender camara</button>
+        <button class="btn btn-danger btn-sm rounded-3" onclick="cerrarCamara()">Detener camara</button>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <audio id="audioScaner" src="assets/sonido.mp3"></audio>
+  <!--   <script src="assets/js/index.js"> </script> -->
+
+
+  <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js">  </script>
+
+  <script type="module">
+
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyAfR2r6A2m8Cv-Y-0zCVedzM3vuVKUtzIM",
+      authDomain: "entradasla14.firebaseapp.com",
+      projectId: "entradasla14",
+      databaseURL: "https://entradasla14-default-rtdb.firebaseio.com/",
+      storageBucket: "entradasla14.appspot.com",
+      messagingSenderId: "353567680129",
+      appId: "1:353567680129:web:78f3b185c07a8c17110f80",
+      measurementId: "G-FM0ZSC68RX"
+
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    // Accede a la base de datos
+    let db = firebase.database().ref('entradas');
+    // Create a reference to the users collection
+
+    // guardar message to firebase
+    function registarQR(clave, email) {
+      var id = clave;
+      var article = {
+        'estado': 0,
+      }
+      firebase.database().ref('entradas/' + id).set(article);
+    }
+
+
+
+    // guardar message to firebase
+    function buscarQR(clave) {
+
+      firebase.database().ref('entradas/' + clave).once('value').then(
+        function (snapshot) {
+          var estado = snapshot.val().estado;
+          //alert(estado);
+          if (estado == 0) {
+            $("#he").text(clave + " Entrada Valida");
+            editarQR(clave, 1);
+          }
+          else if (estado = 1) {
+            $("#he").text(clave + " No valida, ya fue resgistrado");
+          }
+          else
+            $("#he").text("Entrada no existe!!!");
+
+        }
+      ).catch(Error => $("#he").text("Entrada no existe!!!"));
+
+
+    }
+
+    // guardar message to firebase
+    function editarQR(clave, valor) {
+      var newPostKey = firebase.database().ref().child('value').push().estado;
+      firebase.database().ref('entradas/' + clave).set({ estado: valor });
+    }
+
+
+
+
+    //callback cuando termina de leer el codigo QR
+    qrcode.callback = (respuesta) => {
+      if (respuesta) {
+        //console.log(respuesta);
+        activarSonido();
+        var entrada = respuesta.substr(respuesta.lastIndexOf("k=") + 2);
+        //Swal.fire(entrada);
+        //document.location.replace(respuesta);
+        //Swal.fire(entrada);
+        cerrarCamara();
+
+        //editarQR(entrada, valor);
+        buscarQR(entrada);
+        //registarQR(entrada, '0');
+
+        btnScanQR(entrada);
+        //encenderCamara();    
+      }
+    };
+
+
+
+
+
+
+
+
+  </script>
+
+  <script>
+
+
+
+
+    //crea elemento
+    const video = document.createElement("video");
+
+    //nuestro camvas
+    const canvasElement = document.getElementById("qr-canvas");
+    const canvas = canvasElement.getContext("2d");
+
+    //div donde llegara nuestro canvas
+    const btnScanQR = document.getElementById("btn-scan-qr");
+
+    //lectura desactivada
+    let scanning = false;
+
+    //funcion para encender la camara
+    const encenderCamara = () => {
+      navigator.mediaDevices
+        .getUserMedia({ video: { facingMode: "environment" } })
+        .then(function (stream) {
+          scanning = true;
+          btnScanQR.hidden = true;
+          canvasElement.hidden = false;
+          video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+          video.srcObject = stream;
+          video.play();
+          tick();
+          scan();
+        });
+    };
+
+    //funciones para levantar las funiones de encendido de la camara
+    function tick() {
+      canvasElement.height = video.videoHeight;
+      canvasElement.width = video.videoWidth;
+      canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+
+      scanning && requestAnimationFrame(tick);
+    }
+
+    function scan() {
+      try {
+        qrcode.decode();
+      } catch (e) {
+        setTimeout(scan, 300);
+      }
+    }
+
+    //apagara la camara
+    const cerrarCamara = () => {
+      video.srcObject.getTracks().forEach((track) => {
+        track.stop();
+      });
+      canvasElement.hidden = true;
+      btnScanQR.hidden = false;
+    };
+
+    const activarSonido = () => {
+      var audio = document.getElementById('audioScaner');
+      audio.play();
+    }
+
+    //evento para mostrar la camara sin el boton 
+    window.addEventListener('load', (e) => {
+      encenderCamara();
+    })
+
+
+
+
+
+
+  </script>
+</body>
+
+</html>
+
+<!-- 
+<script src="index.js"></script> -->
