@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <script src="assets/plugins/qrCode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</head>
+
+<body>
+  <div class="row justify-content-center m-3">
+    <div class="col-sm-4 shadow p-1">
+      <h5 class="text-center">LISTADO DE ENTRADAS</h5>
+      </br>
+      <div class="row text-center p-1 m-1">
+        buscar :<input id="idq" type="text" value="VLV241012061433"> </input>
+
+      </div>
+      <div class="row text-center p-3 m-3">
+        <div class="col-sm-4 " id="idrclave">
+
+        </div>
+        <div class="col-sm-4 " id="idestado">
+
+        </div>
+        <div class="row m-2">
+
+
+        <!--   <button class="btn btn-danger btn-sm rounded-3" onclick="registrard()">Registrar </button> -->
+        </div>
+      </div>
+    </div>
+
+
+    <audio id="audioScaner" src="assets/sonido.mp3"></audio>
+    <!--   <script src="assets/js/index.js"> </script> -->
+    <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js">  </script>
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAfR2r6A2m8Cv-Y-0zCVedzM3vuVKUtzIM",
+        authDomain: "entradasla14.firebaseapp.com",
+        projectId: "entradasla14",
+        databaseURL: "https://entradasla14-default-rtdb.firebaseio.com/",
+        storageBucket: "entradasla14.appspot.com",
+        messagingSenderId: "353567680129",
+        appId: "1:353567680129:web:78f3b185c07a8c17110f80",
+        measurementId: "G-FM0ZSC68RX"
+      };
+      firebase.initializeApp(firebaseConfig);
+      // Accede a la base de datos
+      let db = firebase.database().ref('entradas');
+      // Create a reference to the users collection
+
+      $(document).ready(function () {
+
+        $("#idq").on("keypress", function (event) {
+          if (event.keyCode === 13) {
+            let bclave = $(this).val();
+           // alert(bclave);
+            buscarQR(bclave);
+          }
+        });
+      });
+
+      function buscarQR(clave) {
+        firebase.database().ref('entradas/' + clave).once('value').then(
+          function (snapshot) {
+            var estado = snapshot.val().estado;
+            if (estado = 1) {
+              editarQR(clave, 0);
+              alert('Reseteado');
+            }
+            else
+            alert('No existe');
+
+          }
+        ).catch(Error => alert('No existe'));
+
+
+      }
+
+    // guardar message to firebase
+    function editarQR(clave, valor) {
+      var newPostKey = firebase.database().ref().child('value').push().estado;
+      firebase.database().ref('entradas/' + clave).set({ estado: valor });
+    }
+
+
+
+
+
+
+      // guardar message to firebase
+      function listarQR(qbuscar) {
+        db.orderByKey().startAt(qbuscar).endAt(qbuscar + '\uf8ff').on("child_added", function (snapshot) {
+          console.log(snapshot.key);
+        });
+
+      }
+
+
+
+
+      ///poner ceros en la entrada antes de los numeros
+      const ceros = (number, len) => "0".repeat(len - number.toString().length) + number.toString();
+
+
+      /* 
+      GENERAR ENTRADAS.
+      GenerarEntradas('GOL24101206', 16);
+      GenerarEntradas('VIP24101206', 800);
+      GenerarEntradas('VLV24101206', 1500);
+      GenerarEntradas('Z1424101206', 1500);
+ */
+      function GenerarEntradas(texto, n) {
+        for (let i = 1; i <= n; i++) {
+          let entra = texto + ceros(i, 4);
+          console.log(entra);
+          registarQR(entra);
+        }
+      }
+
+
+
+      function registrard() {
+        alert(1);
+      }
+
+
+
+      // guardar message to firebase
+      function registarQR(clave) {
+        var id = clave;
+        var article = {
+          'estado': 0,
+        }
+        firebase.database().ref('entradas/' + id).set(article);
+      }
+
+     
+
+    </script>
+
+
+</body>
+
+</html>
